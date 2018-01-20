@@ -1,14 +1,14 @@
 @echo off
 setlocal enabledelayedexpansion
 
-:: 
+:: 换行符占两行
 set lf=^
 
 
 
 goto :cmd_EndFlag
 :: -------------------------------------------------
-:: vttsrt,:vtt_size.
+:: vtt转换srt,注意:vtt_size同时缩放垂直位置.
 :vttsrt
 :: UTF-8
 chcp 65001
@@ -134,7 +134,7 @@ for /F "tokens=* usebackq" %%i in ("!vtt_filename!") do @(
 	set vtt_position=
 )
 set nextsrtid=
-::
+::恢复到简体中文
 chcp 936
 goto :eof
 if defined cmd_EndFlag goto :eof
@@ -143,9 +143,9 @@ if defined cmd_EndFlag goto :eof
 set cmd_EndFlag=1
 :: --------------------------------------------------------------------------
 
-set help_cmd=!lf!%~f0exit!lf!
-set help_cmd=!help_cmd!!lf!vttsrt,vtt!lf!
-set help_cmd=!help_cmd!    call :vttsrt [vttFile] [srtFile]    vttsrt,srt!lf!
+set help_cmd=!lf!当前运行文件：%~f0，自定义批处理，输入exit退出。!lf!
+set help_cmd=!help_cmd!!lf!vtt转换成srt文件,将vtt文件拖至此文件或输入以下命令：!lf!
+set help_cmd=!help_cmd!    call :vttsrt [vttFile] [srtFile]    vtt转换srt文件,不替换已存在的srt文件。!lf!
 set help_args=""
 set myinput=
 set runcmd=
@@ -192,7 +192,7 @@ goto :Input
 goto :eof
 
 :: --------------------------------------------------------------------------
-:: 
+:: 还原变量
 :dvars
 if "!%1!"=="" goto :eof
 set varstr=!%1!
@@ -230,9 +230,9 @@ set %1=!varstr!
 goto :eof
 
 :: --------------------------------------------------------------------------
-:: 
-:: repchr [] [] []
-:: 
+:: 备用
+:: repchr [输入字符串变量名] [替换表达式变量名] [输出变量名]
+:: 例如：替换特殊字符。
 :: @set "spcrepexp=~=U+7e `=U+60 ^^^!=U+21 @=U+40 %%=U+25 ^^=U+5e ^&=U+26 ^(=U+28 ^)=U+29 ^==U+3d ^|=U+7c ^"=U+22 ^<=U+3c ^>=U+3e ^\=U+5c ^/=U+2f ^,=U+2c"
 :: call :repchr myinput spcrepexp innercmd > nul
 :repchr
