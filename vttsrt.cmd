@@ -1,20 +1,23 @@
 @echo off
 setlocal enabledelayedexpansion
 
-:: set lf=^后面必需隔两行，这是换行符！
+:: 
 set lf=^
 
 
 
 goto :cmd_EndFlag
 :: -------------------------------------------------
+:: vttsrt,:vtt_size.
 :vttsrt
-::UTF-8
+:: UTF-8
 chcp 65001
+cls
 set vtt_filename=%~1
 set srt_filename=%~2
 if not EXIST !vtt_filename! goto :eof
 if EXIST !srt_filename! goto :eof
+echo Convert to srt file: !vtt_filename!
 set srtid=0
 set nextsrtid=1
 set srtall=
@@ -131,17 +134,18 @@ for /F "tokens=* usebackq" %%i in ("!vtt_filename!") do @(
 	set vtt_position=
 )
 set nextsrtid=
-::恢复到简体中文
+::
 chcp 936
+goto :eof
 if defined cmd_EndFlag goto :eof
 :: -------------------------------------------------
 :cmd_EndFlag
 set cmd_EndFlag=1
 :: --------------------------------------------------------------------------
 
-set help_cmd=!lf!当前运行文件：%~f0，自定义批处理，部分命令失效或不支持，输入exit退出。!lf!
-set help_cmd=!help_cmd!!lf!vtt转换成srt文件：!lf!
-set help_cmd=!help_cmd!!    call :vttsrt vttFile srtFile    vtt转换成srt文件,不替已存在的srt文件。!lf!
+set help_cmd=!lf!%~f0exit!lf!
+set help_cmd=!help_cmd!!lf!vttsrt,vtt!lf!
+set help_cmd=!help_cmd!    call :vttsrt [vttFile] [srtFile]    vttsrt,srt!lf!
 set help_args=""
 set myinput=
 set runcmd=
@@ -152,53 +156,43 @@ if /i "!cmd_args1!"=="-h" (
 	echo !help_args!
 	goto :eof
 )
+:cnvvtts
+set cntvtts=0
 if EXIST "%~f1" (
 	if "%~x1"==".vtt" (
 		call :vttsrt "%~f1" "%~n1.srt"
-		goto :eof
+		set /A cntvtts=%cntvtts%+1
+		shift /1
 	)
-) 
+)
+if EXIST "%~f1" (
+	if "%~x1"==".vtt" (
+		goto :cnvvtts
+	)
+)
+if %cntvtts% gtr 0 goto :eof
 echo !help_cmd!
 call :Input %0
 goto :eof
 
 :Input
 set runcmd=
-set mycmdargs=
+set innercmd=
 set myinput=
 set /p myinput=%cd%^>
 if not defined myinput goto :Input
-:: 用变量延迟方法避开特殊字符造成的语法错误。
 set runcmd=!myinput!
-set mycmdargs=!myinput!
-if /i "!mycmdargs!"=="exit" goto :eof
-if /i "!mycmdargs!"=="quit" goto :eof
-if /i "!mycmdargs!"=="?" call :echo !help_cmd! & set mycmdargs= & set myinput= & goto :Input
-for /F "tokens=1-10 delims=, " %%a in ("!mycmdargs!") do ( set "arg1=%%a" )
-if "!arg1!"=="cmdval" ( set "runcmd=call :!myinput!" )
+set innercmd=!myinput!
+if /i "!innercmd!"=="exit" goto :eof
+if /i "!innercmd!"=="quit" goto :eof
+if /i "!innercmd!"=="?" echo !help_cmd! & set innercmd= & set myinput= & goto :Input
 call :dvars runcmd
 %runcmd:U+21=!%
 goto :Input
 goto :eof
 
 :: --------------------------------------------------------------------------
-
-:: cmdval ["cmd"] [varoutput] ["split"] ["options"]
-:: 将执行结果保存到变量，只适用外部命令。
-:cmdval
-set "cmdstr=%~1"
-set OutPutValue=
-set split=%~3
-set foroptions=%~4
-if not defined split set split=!lf!
-if "!split!"=="\n" set split=!lf!
-if not defined foroptions set "foroptions=tokens=* delims= "
-for /f "usebackq %foroptions%" %%i in ( `!cmdstr!` ) do set OutPutValue=!OutPutValue!%%i!split!
-set %2=!OutPutValue!
-set OutPutValue= & set split= & set foroptions= & set cmdstr=
-goto :eof
-
-:: --------------------------------------------------------------------------
+:: 
 :dvars
 if "!%1!"=="" goto :eof
 set varstr=!%1!
@@ -210,8 +204,6 @@ set varstr=!varstr:^>=U+3e!
 set varstr=!varstr: =U+a0!
 set varstr=%varstr:!=U+21%
 set varstr_tmp=
-:: set "exp=^^^!=U+21"
-:: if defined varstr call :repchr varstr exp varstr > nul
 if defined varstr (
 	for /F "tokens=*" %%i in ("!varstr!") do (
 		for /F "usebackq tokens=*" %%j in (`echo %%i`) do (
@@ -238,13 +230,11 @@ set %1=!varstr!
 goto :eof
 
 :: --------------------------------------------------------------------------
-:: 备用脚本
-:: repchr [输入字符串变量名] [替换表达式变量名] [输出变量名]
-:: 例如：替换引起语法错误的字符。
+:: 
+:: repchr [] [] []
+:: 
 :: @set "spcrepexp=~=U+7e `=U+60 ^^^!=U+21 @=U+40 %%=U+25 ^^=U+5e ^&=U+26 ^(=U+28 ^)=U+29 ^==U+3d ^|=U+7c ^"=U+22 ^<=U+3c ^>=U+3e ^\=U+5c ^/=U+2f ^,=U+2c"
-:: if defined myinput (
-::	call :repchr myinput spcrepexp mycmdargs > nul
-:: )
+:: call :repchr myinput spcrepexp innercmd > nul
 :repchr
 set repstr=!%~1!
 set repexp=!%~2!
@@ -269,3 +259,4 @@ if "!repstr:~%loop_n%,1!"=="" (
 	goto :eof
 ) else goto :repchr_loop
 goto :eof
+
